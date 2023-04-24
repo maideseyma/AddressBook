@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace AddressBookEL.Models
 {
+    [Table("UserAddresses")] // bu nedenle tablolara es takısı vereden kullanıyorlar
     public class UserAddress:BaseNumeric
     {
         [Required]
