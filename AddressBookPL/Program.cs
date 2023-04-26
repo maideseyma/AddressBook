@@ -1,4 +1,9 @@
+using AddressBookBL.EmailSenderBusiness;
+using AddressBookBL.ImplementationsOfManagers;
+using AddressBookBL.InterfacesOfManagers;
 using AddressBookDL;
+using AddressBookDL.ImplementationsOfRepo;
+using AddressBookDL.InterfacesOfRepo;
 using AddressBookEL.IdentityModels;
 using AddressBookEL.Mapping;
 using AddressBookPL.DefaultData;
@@ -14,6 +19,14 @@ builder.Services.AddDbContext<MyContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Local"));
 
 });
+
+var lockoutOptions = new LockoutOptions()
+{
+    AllowedForNewUsers = true,
+    DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1),
+    MaxFailedAccessAttempts = 2
+};
+
 //identtiy ayarý 
 builder.Services.AddIdentity<AppUser, AppRole>(options =>
 {
@@ -25,6 +38,7 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
     options.Password.RequireDigit = false;
     options.User.RequireUniqueEmail = true;
     options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyz-_0123456789";
+    options.Lockout = lockoutOptions;
 
 
 
@@ -47,8 +61,20 @@ builder.Services.AddAutoMapper(x =>
 builder.Services.AddControllersWithViews();
 
 //interfacelerin DI için yaþam dngüleri (AddScoped)
-//buraya geri döneceðiz
 
+builder.Services.AddScoped<ICityRepo, CityRepo>();
+builder.Services.AddScoped<ICityManager, CityManager>();
+
+builder.Services.AddScoped<IDistrictRepo, DistrictRepo>();
+builder.Services.AddScoped<IDistrictManager, DistrictManager>();
+
+builder.Services.AddScoped<INeighbourhoodRepo, NeighbourhoodRepo>();
+builder.Services.AddScoped<INeighbourhoodManager, NeighbourhoodManager>();
+
+builder.Services.AddScoped<IUserAddressRepo, UserAddressRepo>();
+builder.Services.AddScoped<IUserAddressManager, UserAddressManager>();
+
+builder.Services.AddScoped<IEmailSender, EmailSender>();
 
 
 
