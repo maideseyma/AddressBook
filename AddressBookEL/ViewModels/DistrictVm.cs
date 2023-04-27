@@ -12,7 +12,7 @@ namespace AddressBookEL.ViewModels
     public class DistrictVM
     {
         public int Id { get; set; }
-        public DateOnly CreatedDate { get; set; }
+        public DateTime CreatedDate { get; set; }
         public bool IsRemoved { get; set; }
 
         [Required]

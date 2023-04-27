@@ -1,10 +1,14 @@
 ﻿using AddressBookBL.EmailSenderBusiness;
 using AddressBookBL.InterfacesOfManagers;
+using AddressBookDL.InterfacesOfRepo;
 using AddressBookEL.IdentityModels;
 using AddressBookEL.ViewModels;
+using AddressBookPL.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Server.IIS;
+using System.Diagnostics;
 
 namespace AddressBookPL.Controllers
 {
@@ -35,15 +39,21 @@ namespace AddressBookPL.Controllers
         }
 
         [HttpGet]
-        // identity yi kullandığımız için Authorize içine role eklenebilir
-        [Authorize(Roles ="Customer,Guest")]
-
+        // identity'yi kullandığımız için Authorize içine role eklenebilir
+        [Authorize(Roles = "Customer,Guest")]
         public IActionResult AddAddress()
         {
             try
             {
                 ViewBag.Cities = _cityManager.GetAll(x => !x.IsRemoved).Data;
-                return View();
+
+                var user = _userManager.FindByNameAsync(HttpContext.User.Identity?.Name).Result;
+                UserAddressVM model = new()
+                {
+                    UserId = user.Id
+                };
+
+                return View(model);
             }
             catch (Exception ex)
             {
@@ -52,6 +62,93 @@ namespace AddressBookPL.Controllers
             }
         }
 
+
+        [HttpGet]
+        public JsonResult GetCityDistricts(int id)
+        {
+            try
+            {
+                var data = _districtManager.GetAll(x => x.CityId == id && !x.IsRemoved).Data;
+
+                if (data == null)
+                {
+                    return Json(new { issuccess = false, message = "ilçeler bulunamadı!" });
+                }
+
+                return Json(new { issuccess = true, message = "ilçeler geldi", data });
+
+            }
+            catch (Exception ex)
+            {
+                return Json(new { issuccess = false, message = ex.Message });
+            }
+        }
+
+
+        [HttpGet]
+        public JsonResult GetDistrictsNeigh(int id)
+        {
+            try
+            {
+                var data = _neighbourhoodManager.GetAll(x => x.DistrictId == id && !x.IsRemoved).Data;
+
+                if (data == null)
+                {
+                    return Json(new { issuccess = false, message = "mahalleler bulunamadı!" });
+                }
+
+                return Json(new { issuccess = true, message = "mahalleler geldi", data });
+
+            }
+            catch (Exception ex)
+            {
+                return Json(new { issuccess = false, message = ex.Message });
+            }
+
+        }
+
+
+
+
+        [HttpPost]
+        [Authorize(Roles = "Customer")]
+        public JsonResult SaveAddress([FromBody] UserAddressVM model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return Json(new { issuccess = false, msg = "Verileri eksiksiz girdiğinize emin olun!" });
+                }
+
+                model.CreatedDate = DateTime.Now;
+
+                // yeni gelen adres varsayılan mı? Evet ise veritabanındaki diğer varsayılanı KALDIR
+                if (model.IsDefaultAddress)
+                {
+                    var prevDefault = _userAddressManager.GetByConditions(x => x.IsDefaultAddress
+                    && !x.IsRemoved).Data;
+                    if (prevDefault != null)
+                    {
+                        prevDefault.IsDefaultAddress = false;
+                        _userAddressManager.Update(prevDefault);
+                    }
+                }
+
+                var result = _userAddressManager.Add(model);
+                if (result.IsSuccess)
+                {
+                    return Json(new { issuccess = true, msg = "Yeni adres eklendi!" });
+                }
+                return Json(new { issuccess = false, msg = "Ekleme BAŞARISIZ!" });
+
+            }
+            catch (Exception ex)
+            {
+                return Json(new { issuccess = false, msg = ex.Message });
+            }
+
+        }
 
     }
 }

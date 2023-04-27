@@ -14,7 +14,7 @@ namespace AddressBookEL.ViewModels
 
         [Required]
         [StringLength(50, MinimumLength = 2)]
-        public string Title { get; set; } // İş adresim başlık
+        public string Tittle { get; set; } // İş adresim başlık
 
         [Required]
         [StringLength(100, MinimumLength = 10)]
@@ -27,8 +27,8 @@ namespace AddressBookEL.ViewModels
         public bool IsDefaultAddress { get; set; }
 
 
-        public NeighbourhoodVM NeighbourhoodFK { get; set; }
+        public NeighbourhoodVM? NeighbourhoodFK { get; set; }
 
-        public AppUser AppUser { get; set; }
+        public AppUser? AppUser { get; set; }
     }
 }
