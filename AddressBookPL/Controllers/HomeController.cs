@@ -7,8 +7,12 @@ using AddressBookPL.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Server.IIS;
+using Newtonsoft.Json;
 using System.Diagnostics;
+using System.Net;
+using System.Text;
 
 namespace AddressBookPL.Controllers
 {
@@ -118,7 +122,24 @@ namespace AddressBookPL.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    return Json(new { issuccess = false, msg = "Verileri eksiksiz girdiğinize emin olun!" });
+                    //StringBuilder sb = new StringBuilder();
+                    //sb.AppendLine("Verileri eksiksiz girdiğinize emin olun!");
+
+                    //foreach (var modelState in ViewData.ModelState.Values)
+                    //{
+                    //    foreach (ModelError error in modelState.Errors)
+                    //    {
+                    //        sb.AppendLine(error.ErrorMessage);
+                    //    }
+                    //}
+                    //return Json(new { issuccess = false, msg = sb.ToString() });
+
+                    //2. yöntem 
+                    string messages = string.Join("\n ", ModelState.Values
+                                        .SelectMany(x => x.Errors)
+                                        .Select(x => x.ErrorMessage));
+
+                    return Json(new { issuccess = false, msg = messages });
                 }
 
                 model.CreatedDate = DateTime.Now;
@@ -149,6 +170,53 @@ namespace AddressBookPL.Controllers
             }
 
         }
+
+
+
+        [HttpGet]
+        public JsonResult GetNeighbourhoodPostalCode(int cityid, int districtid, int neighbourid)
+        {
+            try
+            {
+                var district = _districtManager.GetByConditions(x => x.Id == districtid).Data;
+                var neighbourhood = _neighbourhoodManager.GetByConditions(x => x.Id == neighbourid).Data;
+
+
+                string url = "https://api.ubilisim.com/postakodu/il/" + cityid;
+
+                using (WebClient client = new WebClient()) // HttpClient WebClient
+                {
+                    var response = client.DownloadString(url);
+                    var dataAll = JsonConvert.DeserializeObject<ApiVM>(response);
+
+                    var data = dataAll.postakodu.FirstOrDefault(
+                    x => x.ilce.ToLower() == district.Name.ToLower()
+                    && x.mahalle.ToLower() == neighbourhood.Name.ToLower());
+
+                    if (data != null)
+                    {
+                        neighbourhood.PostCode = data.pk;
+                        _neighbourhoodManager.Update(neighbourhood);
+
+                        return Json(new
+                        {
+                            issuccess = true,
+                            msg = "Posta kodu bulundu",
+                            data = data.pk
+                        });
+
+                    }
+                    return Json(new { issuccess = false, msg = "Posta kodu bulunamadı!" });
+                }
+
+            }
+            catch (Exception ex)
+            {
+                return Json(new { issuccess = false, msg = ex.Message });
+            }
+        }
+
+
 
     }
 }

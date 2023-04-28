@@ -6,6 +6,8 @@
 
 <div class="row">
     <form>
+
+        <div class="text-danger" asp-validation-summary="All" ></div>
         <input type="hidden" asp-for="UserId" id="userid" />
 
         <div class="row">
@@ -103,51 +105,36 @@
 
 @section Scripts{
     <script>
-
         $(document).ready(function () {
-
             //ilçe ve mahalle comboları pasif olacak
             $("#districtSelect").attr("disabled", true);
             $("#neighbourhoodSelect").attr("disabled", true);
             $("#cityselect").val(0);
-
-
             //city combosundan il seçildiğinde value >0 ise o ile bağlı ilçeleri ilçe combosuna dolduracağız
-
             $("#cityselect").change(function () {
-
                 // önce burada il değeri değişti anda ilçe ve mahalle comboları temizlenecek
                 $("#districtSelect").empty();
                 $("#districtSelect").append("<option selected value='0'>***İlçe Seçiniz***</option>");
                 $("#districtSelect").attr("disabled", true);
-
-
                 $("#neighbourhoodSelect").empty();
                 $("#neighbourhoodSelect").append("<option selected value='0'>***Mahalle Seçiniz***</option>");
                 $("#neighbourhoodSelect").attr("disabled", true);
-
                 $("#postalcode").val(''); // posta kodu temizlensin
-
                 // hangi ili seçtiğine bakacağız
-
                 var cityid = $("#cityselect").val(); // this.value
-
                 if (cityid > 0) {
                     $.ajax({
                         type: "get",
                         url: '/Home/GetCityDistricts/' + cityid,
                         success: function (res) {
                             if (res.issuccess) {
-
                                 console.log(res.data);
                                 //döngü kurup her ilçeyi comboya aktaracapız
                                 $.each(res.data, function () {
                                     $("#districtSelect").append($("<option />")
                                         .val(this.id).text(this.name));
-
                                 }); // döngü bitti
                                 $("#districtSelect").attr("disabled", false); // aktif
-
                             }
                             else {
                                 alert(res.message);
@@ -158,41 +145,30 @@
                         }
                     }); // ajax bitti
                 } // if bitti
-
             });// cityselect bitti
-
-
             //ilçe seçildiğinde ona bağlı mahalleleri getireceğiz
             $("#districtSelect").change(function () {
-
                 //önce gidip mahalle combosunu temizlicek
                 $("#neighbourhoodSelect").empty();
                 $("#neighbourhoodSelect").append(
                     "<option selected value='0'>***Mahalle Seçiniz***</option>");
                 $("#neighbourhoodSelect").attr("disabled", true);
-
-
                 $("#postalcode").val(''); // posta kodu temizlensin
-
                 // hangi ilçeyi seçtiğine bakacağız
                 var districtid = $("#districtSelect").val();
                 if (districtid > 0) {
-
                     $.ajax({
                         type: "get",
                         url: '/Home/GetDistrictsNeigh/' + districtid,
                         success: function (res) {
                             if (res.issuccess) {
-
                                 console.log(res.data);
                                 //döngü kurup her ilçeyi comboya aktaracapız
                                 $.each(res.data, function () {
                                     $("#neighbourhoodSelect").append($("<option />")
                                         .val(this.id).text(this.name));
-
                                 }); // döngü bitti
                                 $("#neighbourhoodSelect").attr("disabled", false); // aktif
-
                             }
                             else {
                                 alert(res.message);
@@ -202,28 +178,17 @@
                             alert(res.message);
                         }
                     }); // ajax bitti
-
                 } // if bitti
-
             }); // district select bitti
-
-
             $("#btnClear").click(function () {
-
                 $("#addresstitle").val('');
                 $("#addressdetail").val('');
                 $("#cityselect").val(0).trigger('change'); // trigger ile change eventı tetiklendi
-                $("#checkbox1").attr('checked', false);
-
+                $('#checkbox1').prop('checked', false);
             }); // btnClear bitti
-
-
             $("#btnSave").click(function () {
-
                 //mahalle başlık detay userid varsayılan mı?
-
                 var neighbourid = $("#neighbourhoodSelect").val();
-
                 if (neighbourid > 0) {
                     var address = {
                         Tittle: $("#addresstitle").val(),
@@ -232,12 +197,9 @@
                         NeighbourhoodId: neighbourid
                     };
                     //IsDefaultAddress
-
                     if ($('#checkbox1').is(':checked')) {
                         address.IsDefaultAddress = true;
                     }
-
-
                     $.ajax({
                         contentType: "application/json charset=utf-8;",
                         type: "post",
@@ -247,15 +209,11 @@
                         success: function (res) {
                             if (res.issuccess) {
                                 alert(res.msg);
-
-
-
                                 // TEMİZLİK
                                 $("#addresstitle").val('');
                                 $("#addressdetail").val('');
                                 $("#cityselect").val(0).trigger('change'); // trigger ile change eventı tetiklendi
-                                $("#checkbox1").attr('checked', false);
-
+                                $('#checkbox1').prop('checked', false);
                             } else {
                                 alert(res.msg);
                             }
@@ -264,19 +222,37 @@
                             alert(res.msg);
                         }
                     }); // ajax bitti
-
-
                 }
                 else {
-                    alert("Zorunlu alanları doldurunuz!");
+                    alert("Zorulun alanları doldurunuz!");
                 }
-
             }); // btnSave bitti
+            $("#neighbourhoodSelect").change(function () {
+                var cityid = $("#cityselect").val();
+                var districtid = $("#districtSelect").val();
+                var neighbourhoodid = $("#neighbourhoodSelect").val();
+                $("#postalcode").val('');
+                if (neighbourhoodid > 0) {
+                    $.ajax({
+                        type: "get",
+                        url: "/Home/GetNeighbourhoodPostalCode?cityid=" + cityid
+                            + "&districtid=" + districtid + "&neighbourid=" + neighbourhoodid,
+                        success: function (res) {
+                            if (res.issuccess) {
+                                var postalcode = res.data;
+                                $("#postalcode").val(postalcode);
+                            }
+                            else {
+                                alert(res.msg);
+                            }
+                        }, // success funk. bitti
+                        error: function (res) {
+                            alert(res.msg);
+                        } // error bitti
+                    }); // ajax bitti
+                } // if bitti
 
-
+            }); // neighbourhood select bitti
         }); // document ready bitti
-
-
-
     </script>
 }
